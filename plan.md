@@ -25,6 +25,8 @@ Goal: reproduce the flow using only real Jisr DS components.
 1. Scheduler grid (#8) → DS `Table` with custom cell renderers.
 2. Segmented controls (#15, #27) → `Tabs` styled as segments.
 3. Employee multi-select (#16) → UNDECIDED; confirm repo Combobox/Select first, else compose Input+Dropdown+Tag.
+4. Employee picker supports **department bulk assignment** (pick a dept → add all its members as chips); individual multi-select kept as the base. Scheduler-groups / work-centers deferred (same pattern later).
+5. Plan OT **draft rail** is a **collapsible summary grouped by department** (one row per dept: emp count + total hours, expandable to dated entries), not a flat per-entry list — scales with headcount.
 
 ## Component manifest
 Legend: Full = complete DS component · Atomic = composed from atoms (needs OK) · Decision = flagged
@@ -46,14 +48,14 @@ Legend: Full = complete DS component · Atomic = composed from atoms (needs OK) 
 | 13 | Assign drawer | S1 | Full | Drawer (`molecules-drawer`) | |
 | 14 | Entry-builder card | S2 | Full | Card (`molecules-card`) | |
 | 15 | Single/Range + Paid/TOIL toggles | S2 | Decision→Tabs | Tabs (`molecules-tabs`) | LOCKED: Tabs |
-| 16 | Employee multi-select | S2 | Decision | Input + Dropdown + Tag (chips) | UNDECIDED — check repo Combobox |
+| 16 | Employee multi-select + **dept bulk-add** | S2 | Decision | Input + Dropdown + Tag (chips) | UNDECIDED — check repo Combobox. Dropdown has a Departments section: pick a dept → add all members |
 | 17 | Date pickers | S2 | Full | Calendar in Popover, or Input | |
 | 18 | OT hours input | S2 | Full | NumberInput (`molecules-numberinput`) | Decimal |
 | 19 | Field labels / errors | S2 | Full | Field (`molecules-field`) + Label | |
 | 20 | Reason textarea | S2 | Full | Input (textarea) | |
 | 21 | Info/range note | S2 | Full | Banner (`molecules-banner`, info) | |
-| 22 | Draft rail | S2 | Full | Card + count Badge | |
-| 23 | Draft item rows | S2 | Full | Item (`molecules-item`) + Avatar + Badge | Grouped by day |
+| 22 | Draft rail | S2 | Full | Card + count Badge | **Collapsible summary grouped by department** (dept header = emp count + total hrs) |
+| 23 | Draft item rows | S2 | Full | Item (`molecules-item`) + Avatar + Badge | Grouped by **department**, expandable; each row shows date · shift |
 | 24 | Paid OT / TOIL badge | S2, S3 | Full | Badge / Tag | |
 | 25 | Stat cards (×4) | S3 | Full | Card + Typography | |
 | 26 | Sub-tabs + counts | S3 | Full | Tabs + Badge | |

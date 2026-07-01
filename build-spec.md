@@ -107,8 +107,8 @@ Two-column layout: entry-builder `Card` (left) + draft rail `Card` (right, stick
 | Page header + Import Excel | `PageHeader` + `Button` (ghost) | | title "Plan Overtime" + subtitle |
 | Entry card | `Card` (`molecules-card`) | static | |
 | Single / Date range toggle | `Tabs` | segmented (decision #2) | switches field set |
-| **Employee multi-select** | ⚠ decision #3 | | Combobox if exists, else Input+Dropdown+Tag |
-| — selected chips | `Tag` (`with-avatar` + `with-close-button`) | | avatar-colored chips |
+| **Employee multi-select + dept bulk-add** | ⚠ decision #3 | | Combobox if exists, else Input+Dropdown+Tag. Dropdown has a **Departments** section: selecting a dept adds all its members as chips (individual select kept) |
+| — selected chips | `Tag` (`with-avatar` + `with-close-button`) | | avatar-colored chips (dept-added members appear as normal removable chips) |
 | Date / From / To | `Calendar` in `Popover`, or `Input` | | mock uses native date inputs |
 | Shift select | `Dropdown` | | Morning/Night/Evening/Flexible |
 | OT hours | `NumberInput` (`molecules-numberinput`) | decimal, min 0 | validation: > 0 |
@@ -117,15 +117,18 @@ Two-column layout: entry-builder `Card` (left) + draft rail `Card` (right, stick
 | Range note | `Banner` (`molecules-banner`) | `appearance=info`, mid-emphasis | live preview text |
 | Validation error | `Field` error / `Banner` danger | | ported from `showErr()` |
 | Add to draft | `Button` | primary, full-width | |
-| Draft rail | `Card` + count `Badge` | | groups entries by day |
-| Draft item | `Item` (`molecules-item`) + `Avatar` + `Badge` | | name / shift / hours / Paid|TOIL badge / remove |
+| Draft rail | `Card` + count `Badge` | | **collapsible summary grouped by department** — one `Accordion`/collapsible row per dept |
+| — dept header | collapsible header + `Badge`/meta | | `<Dept> · N emp · total hrs`; chevron toggles; collapsed by default; expand state persists |
+| Draft item | `Item` (`molecules-item`) + `Avatar` + `Badge` | | inside expanded dept: date · shift / hours / Paid|TOIL badge / remove |
 | Paid OT / TOIL badge | `Badge` | info / accent (⚠ TOIL color) | |
-| Totals + Submit | `Typography` + `Button` (primary) | | "Submit for approval" |
+| Totals + Submit | `Typography` + `Button` (primary) | | "Submit all · <total>h" |
 
 Behavior to port (from HTML JS): mode toggle shows/hides field sets; `daysBetween` range preview;
 `add-draft` validation (employees ≥1, date, shift, hours > 0); range mode = one entry per employee
-per day; draft grouped/sorted by ISO date with per-day hour sums; `Submit` pushes each draft item
-into `OT` as `status:'pending'` and re-renders Submissions; toasts on add/submit.
+per day; **draft grouped by department** (collapsible; header shows distinct-employee count +
+summed hours; expanded rows sorted show date · shift); dept bulk-add pushes all a department's
+members into the selection; `Submit` pushes each draft item into `OT` as `status:'pending'` and
+re-renders Submissions; toasts on add/submit.
 
 **CHECKPOINT after S2.**
 

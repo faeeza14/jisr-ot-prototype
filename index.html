@@ -194,6 +194,9 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 .dropdown .opt-row .nm{font-size:13px;font-weight:600}
 .dropdown .opt-row .rl{font-size:11.5px;color:var(--muted)}
 .dropdown .empty{padding:14px;text-align:center;color:var(--muted-2);font-size:12.5px}
+.dropdown .opt-sec{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted-2);padding:8px 9px 4px}
+.dropdown .opt-dept .grp-ic{width:26px;height:26px;border-radius:8px;background:#f0f0f3;color:var(--muted);display:flex;align-items:center;justify-content:center;flex:0 0 26px}
+.dropdown .opt-dept .grp-ic svg{width:15px;height:15px}
 
 .row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .input{width:100%;padding:11px 12px;border:1px solid var(--line-2);border-radius:10px;outline:none;background:#fff;transition:.15s}
@@ -222,6 +225,15 @@ textarea.input{resize:vertical;min-height:84px}
 .day-group-head .d{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
 .day-group-head .meta{font-size:11px;color:var(--muted-2)}
 .day-group-head .sum{font-size:12.5px;font-weight:700}
+.dept-group{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.dept-head{display:flex;align-items:center;gap:9px;padding:11px 12px;cursor:pointer;user-select:none}
+.dept-head:hover{background:#f7f7f8}
+.dept-head .chev{width:16px;height:16px;flex:0 0 16px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.dept-group.open .dept-head .chev{transform:rotate(90deg)}
+.dept-head .dn{font-size:13px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dept-head .meta{font-size:11.5px;font-weight:600;color:var(--muted)}
+.dept-body{display:none;padding:2px 8px 8px;border-top:1px solid var(--line)}
+.dept-group.open .dept-body{display:block}
 .draft-item{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:9px}
 .draft-item:hover{background:#f7f7f8}
 .draft-item .av{width:30px;height:30px;border-radius:50%;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 30px}
@@ -622,6 +634,7 @@ const EMPLOYEES = [
   {id:7,name:'Reem Al-Otaibi',dept:'HR',ini:'RA'},
   {id:8,name:'Yousef Kamal',dept:'Operations',ini:'YK'},
 ];
+const DEPARTMENTS = [...new Set(EMPLOYEES.map(e=>e.dept))];
 function av(ini){return AV[ini]||'#6b7280'}
 
 /* scheduler seed */
@@ -700,7 +713,7 @@ $('#open-assign').onclick=openDrawer;$('#close-drawer').onclick=closeDrawer;$('#
 
 /* ---------------- Plan OT ---------------- */
 let mode='single', sType='Paid OT', rType='Paid OT';
-let selectedEmps=[]; let DRAFT=[];
+let selectedEmps=[]; let DRAFT=[]; let expandedDepts=new Set();
 
 /* mode toggle */
 $$('#mode-seg button').forEach(b=>b.onclick=()=>{
@@ -726,10 +739,22 @@ function renderEmpChips(){
 }
 function renderEmpDrop(){
   const q=empInput.value.trim().toLowerCase();
+  /* departments that still have at least one unselected member, matched by the same query */
+  const depts=DEPARTMENTS.map(d=>({
+    dept:d,
+    remaining:EMPLOYEES.filter(e=>e.dept===d&&!selectedEmps.some(s=>s.id===e.id))
+  })).filter(g=>g.remaining.length&&g.dept.toLowerCase().includes(q));
   const avail=EMPLOYEES.filter(e=>!selectedEmps.some(s=>s.id===e.id)&&(e.name.toLowerCase().includes(q)||e.dept.toLowerCase().includes(q)));
-  if(!avail.length){empDrop.innerHTML=`<div class="empty">No more employees</div>`;return}
-  empDrop.innerHTML=avail.map(e=>`<div class="opt-row" data-id="${e.id}"><span class="av" style="background:${av(e.ini)}">${e.ini}</span><div><div class="nm">${e.name}</div><div class="rl">${e.dept}</div></div></div>`).join('');
-  $$('.opt-row',empDrop).forEach(r=>r.onclick=()=>{
+  if(!depts.length&&!avail.length){empDrop.innerHTML=`<div class="empty">No more employees</div>`;return}
+  const deptHtml=depts.length?`<div class="opt-sec">Departments</div>`+depts.map(g=>`<div class="opt-row opt-dept" data-dept="${g.dept}"><span class="grp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><div><div class="nm">${g.dept}</div><div class="rl">Add all · ${g.remaining.length} ${g.remaining.length===1?'employee':'employees'}</div></div></div>`).join(''):'';
+  const empHtml=avail.length?`<div class="opt-sec">Employees</div>`+avail.map(e=>`<div class="opt-row" data-id="${e.id}"><span class="av" style="background:${av(e.ini)}">${e.ini}</span><div><div class="nm">${e.name}</div><div class="rl">${e.dept}</div></div></div>`).join(''):'';
+  empDrop.innerHTML=deptHtml+empHtml;
+  $$('.opt-dept',empDrop).forEach(r=>r.onclick=()=>{
+    const d=r.dataset.dept;
+    EMPLOYEES.filter(e=>e.dept===d&&!selectedEmps.some(s=>s.id===e.id)).forEach(e=>selectedEmps.push(e));
+    empInput.value='';renderEmpChips();renderEmpDrop();empInput.focus();
+  });
+  $$('.opt-row:not(.opt-dept)',empDrop).forEach(r=>r.onclick=()=>{
     const e=EMPLOYEES.find(x=>x.id==r.dataset.id);selectedEmps.push(e);empInput.value='';renderEmpChips();renderEmpDrop();empInput.focus();
   });
 }
@@ -764,13 +789,13 @@ $('#add-draft').onclick=()=>{
     if(!date)return showErr('Pick a date.');
     if(!shift)return showErr('Select a shift.');
     if(!hours||hours<=0)return showErr('Enter OT hours greater than zero.');
-    selectedEmps.forEach(e=>DRAFT.push({uid:crypto.randomUUID(),emp:e.name,ini:e.ini,dateISO:keyDate(date),shift,hours,type:sType}));
+    selectedEmps.forEach(e=>DRAFT.push({uid:crypto.randomUUID(),emp:e.name,ini:e.ini,dept:e.dept,dateISO:keyDate(date),shift,hours,type:sType}));
   }else{
     const days=daysBetween($('#r-from').value,$('#r-to').value),hours=parseFloat($('#r-hours').value),shift=$('#r-shift').value;
     if(!days.length)return showErr('Set a valid From → To range.');
     if(!shift)return showErr('Select a shift.');
     if(!hours||hours<=0)return showErr('Enter OT hours per day greater than zero.');
-    days.forEach(d=>selectedEmps.forEach(e=>DRAFT.push({uid:crypto.randomUUID(),emp:e.name,ini:e.ini,dateISO:keyDate(d),shift,hours,type:rType})));
+    days.forEach(d=>selectedEmps.forEach(e=>DRAFT.push({uid:crypto.randomUUID(),emp:e.name,ini:e.ini,dept:e.dept,dateISO:keyDate(d),shift,hours,type:rType})));
   }
   renderDraft();
   toast(`Added to draft · ${DRAFT.length} ${DRAFT.length===1?'entry':'entries'}`);
@@ -784,24 +809,35 @@ function renderDraft(){
     $('#draft-foot').style.display='none';return;
   }
   $('#draft-foot').style.display='block';
-  const groups={};DRAFT.forEach(d=>{(groups[d.dateISO]=groups[d.dateISO]||[]).push(d)});
+  const groups={};DRAFT.forEach(d=>{(groups[d.dept]=groups[d.dept]||[]).push(d)});
   const keys=Object.keys(groups).sort();
   body.innerHTML=keys.map(k=>{
     const items=groups[k];const sum=items.reduce((a,b)=>a+b.hours,0);
-    return `<div class="day-group">
-      <div class="day-group-head"><div><span class="d">${labelDate(k)}</span> <span class="meta">${items.length} ${items.length===1?'entry':'entries'}</span></div><span class="sum">${fmtH(sum)}</span></div>
-      ${items.map(it=>`<div class="draft-item">
+    const empCount=new Set(items.map(it=>it.emp)).size;
+    const open=expandedDepts.has(k);
+    return `<div class="dept-group${open?' open':''}">
+      <div class="dept-head" data-dept="${k}">
+        <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg></span>
+        <span class="dn">${k}</span>
+        <span class="meta">${empCount} emp · ${fmtH(sum)}</span>
+      </div>
+      <div class="dept-body">${items.map(it=>`<div class="draft-item">
         <span class="av" style="background:${av(it.ini)}">${it.ini}</span>
-        <div class="info"><div class="nm">${it.emp}</div><div class="sh">${it.shift}</div></div>
+        <div class="info"><div class="nm">${it.emp}</div><div class="sh">${labelDate(it.dateISO)} · ${it.shift}</div></div>
         <div class="rt"><span class="h">${fmtH(it.hours)}</span><span class="badge ${it.type==='TOIL'?'b-toil':'b-paid'}">${it.type}</span></div>
         <span class="rm" data-uid="${it.uid}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
-      </div>`).join('')}
+      </div>`).join('')}</div>
     </div>`;
   }).join('');
-  $$('.rm',body).forEach(r=>r.onclick=()=>{DRAFT=DRAFT.filter(d=>d.uid!==r.dataset.uid);renderDraft()});
+  $$('.dept-head',body).forEach(h=>h.onclick=e=>{
+    if(e.target.closest('.rm'))return;
+    const d=h.dataset.dept;expandedDepts.has(d)?expandedDepts.delete(d):expandedDepts.add(d);renderDraft();
+  });
+  $$('.rm',body).forEach(r=>r.onclick=e=>{e.stopPropagation();DRAFT=DRAFT.filter(d=>d.uid!==r.dataset.uid);renderDraft()});
   const paid=DRAFT.filter(d=>d.type==='Paid OT').reduce((a,b)=>a+b.hours,0);
   const toil=DRAFT.filter(d=>d.type==='TOIL').reduce((a,b)=>a+b.hours,0);
   $('#tot-paid').textContent=fmtH(paid);$('#tot-toil').textContent=fmtH(toil);
+  $('#submit-approval').textContent=`Submit all · ${fmtH(paid+toil)}`;
 }
 renderDraft();
 
